@@ -1,0 +1,20 @@
+services:
+  telemedicine-service:
+    build: .
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/telemed-db
+      - APPOINTMENT_SERVICE_URL=http://appointment-service:8081/api/appointment
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
