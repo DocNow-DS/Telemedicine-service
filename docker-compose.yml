@@ -6,8 +6,16 @@ services:
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/telemed-db
       - APPOINTMENT_SERVICE_URL=http://appointment-service:8081/api/appointment
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - USER_EVENTS_EXCHANGE=healthcare.user.events
+      - USER_EVENTS_QUEUE=telemedicine.user.events
+      - USER_EVENTS_ENABLED=true
     depends_on:
       - mongo
+      - rabbitmq
 
   mongo:
     image: mongo:6
@@ -15,6 +23,12 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
 
 volumes:
   mongo-data:

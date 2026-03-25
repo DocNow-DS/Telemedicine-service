@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Collection;
+import java.util.List;
 import java.util.Date;
 import java.util.function.Function;
 
@@ -36,6 +38,18 @@ public class JwtUtil {
             return !isTokenExpired(token);
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    public List<String> extractRoles(String token) {
+        try {
+            Object raw = extractAllClaims(token).get("roles");
+            if (raw instanceof Collection<?> collection) {
+                return collection.stream().map(String::valueOf).toList();
+            }
+            return List.of();
+        } catch (Exception e) {
+            return List.of();
         }
     }
 

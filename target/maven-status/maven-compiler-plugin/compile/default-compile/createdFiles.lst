@@ -1,5 +1,6 @@
-com\healthcare\telemedicine\model\VideoSession$VideoSessionBuilder.class
+com\healthcare\telemedicine\event\UserEvent$UserEventBuilder.class
 com\healthcare\telemedicine\service\AppointmentServiceClient.class
+com\healthcare\telemedicine\model\UserProjection$UserProjectionBuilder.class
 com\healthcare\telemedicine\controller\TelemedicineController.class
 com\healthcare\telemedicine\model\VideoSession.class
 com\healthcare\telemedicine\security\JwtUtil.class
@@ -7,8 +8,15 @@ com\healthcare\telemedicine\dto\VideoSessionDto.class
 com\healthcare\telemedicine\security\SecurityConfig.class
 com\healthcare\telemedicine\TelemedicineServiceApplication.class
 com\healthcare\telemedicine\dto\VideoSessionDto$VideoSessionDtoBuilder.class
+com\healthcare\telemedicine\config\RabbitMqConfig.class
 com\healthcare\telemedicine\dto\JoinSessionResponse.class
+com\healthcare\telemedicine\model\VideoSession$Builder.class
 com\healthcare\telemedicine\repository\VideoSessionRepository.class
 com\healthcare\telemedicine\service\VideoSessionService.class
+com\healthcare\telemedicine\event\UserEventsListener.class
+com\healthcare\telemedicine\event\UserEvent.class
+com\healthcare\telemedicine\dto\DirectSessionRequest.class
 com\healthcare\telemedicine\dto\AppointmentDto.class
+com\healthcare\telemedicine\repository\UserProjectionRepository.class
+com\healthcare\telemedicine\model\UserProjection.class
 com\healthcare\telemedicine\security\JwtAuthenticationFilter.class
