@@ -31,14 +31,13 @@ public class UserEventsListener {
 
         Set<String> roles = event.getRoles() == null ? Set.of() : event.getRoles();
 
-        UserProjection projection = UserProjection.builder()
-                .id(event.getId())
-                .username(event.getUsername())
-                .email(event.getEmail())
-                .roles(roles)
-                .enabled(event.isEnabled())
-                .lastUpdatedAt(event.getOccurredAt() == null ? Instant.now() : event.getOccurredAt())
-                .build();
+        UserProjection projection = new UserProjection();
+        projection.setId(event.getId());
+        projection.setUsername(event.getUsername());
+        projection.setEmail(event.getEmail());
+        projection.setRoles(roles);
+        projection.setEnabled(event.isEnabled());
+        projection.setLastUpdatedAt(event.getOccurredAt() == null ? Instant.now() : event.getOccurredAt());
 
         userProjectionRepository.save(projection);
     }

@@ -10,22 +10,38 @@ public class VideoSession {
     @Id
     private String id;
     private String appointmentId;
+    private String patientId;
+    private String doctorId;
     private String roomId;
     private String jitsiUrl;
     private Instant startTime;
     private Instant endTime;
-    private String status; // PENDING, ACTIVE, ENDED
+    private String endedBy;
+    private String notes;
+    private Instant scheduledAt;
+    private Instant createdAt;
+    private Instant updatedAt;
+    private String status; // IN_SESSION, ENDED
 
     public VideoSession() {
     }
 
-    public VideoSession(String id, String appointmentId, String roomId, String jitsiUrl, Instant startTime, Instant endTime, String status) {
+    public VideoSession(String id, String appointmentId, String patientId, String doctorId, String roomId, String jitsiUrl,
+                        Instant startTime, Instant endTime, String endedBy, String notes, Instant scheduledAt,
+                        Instant createdAt, Instant updatedAt, String status) {
         this.id = id;
         this.appointmentId = appointmentId;
+        this.patientId = patientId;
+        this.doctorId = doctorId;
         this.roomId = roomId;
         this.jitsiUrl = jitsiUrl;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.endedBy = endedBy;
+        this.notes = notes;
+        this.scheduledAt = scheduledAt;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
         this.status = status;
     }
 
@@ -36,10 +52,17 @@ public class VideoSession {
     public static class Builder {
         private String id;
         private String appointmentId;
+        private String patientId;
+        private String doctorId;
         private String roomId;
         private String jitsiUrl;
         private Instant startTime;
         private Instant endTime;
+        private String endedBy;
+        private String notes;
+        private Instant scheduledAt;
+        private Instant createdAt;
+        private Instant updatedAt;
         private String status;
 
         public Builder id(String id) {
@@ -49,6 +72,16 @@ public class VideoSession {
 
         public Builder appointmentId(String appointmentId) {
             this.appointmentId = appointmentId;
+            return this;
+        }
+
+        public Builder patientId(String patientId) {
+            this.patientId = patientId;
+            return this;
+        }
+
+        public Builder doctorId(String doctorId) {
+            this.doctorId = doctorId;
             return this;
         }
 
@@ -72,13 +105,39 @@ public class VideoSession {
             return this;
         }
 
+        public Builder endedBy(String endedBy) {
+            this.endedBy = endedBy;
+            return this;
+        }
+
+        public Builder notes(String notes) {
+            this.notes = notes;
+            return this;
+        }
+
+        public Builder scheduledAt(Instant scheduledAt) {
+            this.scheduledAt = scheduledAt;
+            return this;
+        }
+
+        public Builder createdAt(Instant createdAt) {
+            this.createdAt = createdAt;
+            return this;
+        }
+
+        public Builder updatedAt(Instant updatedAt) {
+            this.updatedAt = updatedAt;
+            return this;
+        }
+
         public Builder status(String status) {
             this.status = status;
             return this;
         }
 
         public VideoSession build() {
-            return new VideoSession(id, appointmentId, roomId, jitsiUrl, startTime, endTime, status);
+            return new VideoSession(id, appointmentId, patientId, doctorId, roomId, jitsiUrl,
+                    startTime, endTime, endedBy, notes, scheduledAt, createdAt, updatedAt, status);
         }
     }
 
@@ -106,6 +165,22 @@ public class VideoSession {
         this.roomId = roomId;
     }
 
+    public String getPatientId() {
+        return patientId;
+    }
+
+    public void setPatientId(String patientId) {
+        this.patientId = patientId;
+    }
+
+    public String getDoctorId() {
+        return doctorId;
+    }
+
+    public void setDoctorId(String doctorId) {
+        this.doctorId = doctorId;
+    }
+
     public String getJitsiUrl() {
         return jitsiUrl;
     }
@@ -128,6 +203,46 @@ public class VideoSession {
 
     public void setEndTime(Instant endTime) {
         this.endTime = endTime;
+    }
+
+    public String getEndedBy() {
+        return endedBy;
+    }
+
+    public void setEndedBy(String endedBy) {
+        this.endedBy = endedBy;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    public Instant getScheduledAt() {
+        return scheduledAt;
+    }
+
+    public void setScheduledAt(Instant scheduledAt) {
+        this.scheduledAt = scheduledAt;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public String getStatus() {

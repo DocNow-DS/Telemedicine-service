@@ -11,8 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class VideoSessionService {
@@ -42,24 +44,7 @@ public class VideoSessionService {
     }
 
     public VideoSession createSession(String appointmentId) {
-        String normalizedAppointmentId = sanitizeSessionId(appointmentId);
-        if (normalizedAppointmentId.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "appointmentId is required");
-        }
-
-        if (appointmentValidationEnabled) {
-            // 1. Fetch appointment details from Appointment Service
-            AppointmentDto appointment = appointmentServiceClient.getAppointment(normalizedAppointmentId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
-
-            // 2. Validate status
-            if (!"CONFIRMED".equalsIgnoreCase(appointment.getStatus())) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Appointment is not confirmed");
-            }
-        }
-
-        // 3. Check if session already exists
-        return findOrCreateSession(normalizedAppointmentId, "telemed-APPT-" + normalizedAppointmentId);
+        return createOrGetAppointmentSession(appointmentId, null, null, false);
     }
 
     public VideoSession createPatientSession(String patientId) {
@@ -96,8 +81,9 @@ public class VideoSessionService {
     }
 
     public VideoSession getSessionByAppointmentId(String appointmentId) {
+        String normalizedAppointmentId = sanitizeSessionId(appointmentId);
         try {
-            return videoSessionRepository.findByAppointmentId(appointmentId)
+            return videoSessionRepository.findTopByAppointmentIdOrderByStartTimeDesc(normalizedAppointmentId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found for this appointment"));
         } catch (ResponseStatusException ex) {
             throw ex;
@@ -107,9 +93,66 @@ public class VideoSessionService {
     }
 
     public VideoSession endSession(String appointmentId) {
-        VideoSession session = getSessionByAppointmentId(appointmentId);
-        session.setEndTime(Instant.now());
+        return endSessionForAppointment(appointmentId, "system", null);
+    }
+
+    public VideoSession createOrGetAppointmentSession(String appointmentId,
+                                                      String patientId,
+                                                      String doctorId,
+                                                      boolean forceNew) {
+        String normalizedAppointmentId = sanitizeSessionId(appointmentId);
+        if (normalizedAppointmentId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "appointmentId is required");
+        }
+
+        String normalizedPatientId = sanitizeParticipantId(patientId);
+        String normalizedDoctorId = sanitizeParticipantId(doctorId);
+
+        if (appointmentValidationEnabled) {
+            AppointmentDto appointment = appointmentServiceClient.getAppointment(normalizedAppointmentId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+            if (!"CONFIRMED".equalsIgnoreCase(appointment.getStatus())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Appointment is not confirmed");
+            }
+        }
+
+        if (forceNew) {
+            videoSessionRepository
+                    .findTopByAppointmentIdAndStatusNotOrderByStartTimeDesc(normalizedAppointmentId, "ENDED")
+                    .ifPresent(existing -> endSessionForAppointment(normalizedAppointmentId, normalizedDoctorId, "Force new session"));
+        } else {
+            Optional<VideoSession> active = videoSessionRepository
+                    .findTopByAppointmentIdAndStatusNotOrderByStartTimeDesc(normalizedAppointmentId, "ENDED");
+            if (active.isPresent()) return active.get();
+        }
+
+        String roomId = buildRoomId(normalizedAppointmentId);
+        VideoSession fresh = buildActiveSession(normalizedAppointmentId, roomId, normalizedPatientId, normalizedDoctorId);
+
+        try {
+            return videoSessionRepository.save(fresh);
+        } catch (Exception ignored) {
+            return fresh;
+        }
+    }
+
+    public VideoSession getLatestSessionForAppointment(String appointmentId) {
+        return getSessionByAppointmentId(appointmentId);
+    }
+
+    public VideoSession endSessionForAppointment(String appointmentId, String endedBy, String notes) {
+        String normalizedAppointmentId = sanitizeSessionId(appointmentId);
+        VideoSession session = videoSessionRepository
+                .findTopByAppointmentIdAndStatusNotOrderByStartTimeDesc(normalizedAppointmentId, "ENDED")
+                .orElseGet(() -> getSessionByAppointmentId(normalizedAppointmentId));
+
+        Instant now = Instant.now();
+        session.setEndTime(now);
         session.setStatus("ENDED");
+        session.setEndedBy(sanitizeParticipantId(endedBy));
+        session.setNotes(notes);
+        session.setUpdatedAt(now);
+
         try {
             return videoSessionRepository.save(session);
         } catch (Exception ex) {
@@ -117,12 +160,36 @@ public class VideoSessionService {
         }
     }
 
+    public List<VideoSession> listSessionsForDoctor(String doctorId) {
+        String normalizedDoctorId = sanitizeParticipantId(doctorId);
+        if (normalizedDoctorId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "doctorId is required");
+        }
+        try {
+            return videoSessionRepository.findByDoctorIdOrderByStartTimeDesc(normalizedDoctorId);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Telemedicine datastore unavailable");
+        }
+    }
+
+    public List<VideoSession> listSessionsForPatient(String patientId) {
+        String normalizedPatientId = sanitizeParticipantId(patientId);
+        if (normalizedPatientId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "patientId is required");
+        }
+        try {
+            return videoSessionRepository.findByPatientIdOrderByStartTimeDesc(normalizedPatientId);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Telemedicine datastore unavailable");
+        }
+    }
+
     private VideoSession findOrCreateSession(String key, String roomId) {
         try {
-            Optional<VideoSession> existing = videoSessionRepository.findByAppointmentId(key);
+            Optional<VideoSession> existing = videoSessionRepository.findTopByAppointmentIdAndStatusNotOrderByStartTimeDesc(key, "ENDED");
             if (existing.isPresent()) return existing.get();
 
-            VideoSession fresh = buildActiveSession(key, roomId);
+            VideoSession fresh = buildActiveSession(key, roomId, null, null);
             try {
                 return videoSessionRepository.save(fresh);
             } catch (Exception ignored) {
@@ -130,22 +197,43 @@ public class VideoSessionService {
                 return fresh;
             }
         } catch (Exception ignored) {
-            return buildActiveSession(key, roomId);
+            return buildActiveSession(key, roomId, null, null);
         }
     }
 
-    private VideoSession buildActiveSession(String key, String roomId) {
+    private VideoSession buildActiveSession(String key, String roomId, String patientId, String doctorId) {
+        Instant now = Instant.now();
         return VideoSession.builder()
                 .appointmentId(key)
+                .patientId(patientId)
+                .doctorId(doctorId)
                 .roomId(roomId)
                 .jitsiUrl(buildJitsiUrl(roomId))
-                .startTime(Instant.now())
-                .status("ACTIVE")
+                .startTime(now)
+                .createdAt(now)
+                .updatedAt(now)
+                .status("IN_SESSION")
                 .build();
     }
 
     private String buildJitsiUrl(String roomId) {
+        if (vpaasMagicCookie == null || vpaasMagicCookie.isBlank()) {
+            return vpaasBaseUrl + "/" + roomId;
+        }
         return vpaasBaseUrl + "/" + vpaasMagicCookie + "/" + roomId;
+    }
+
+    private String buildRoomId(String appointmentId) {
+        String normalized = sanitizeParticipantId(appointmentId);
+        if (normalized.isBlank()) {
+            normalized = "session";
+        }
+        // Keep room names short and unique to avoid stale Jitsi room settings.
+        if (normalized.length() > 28) {
+            normalized = normalized.substring(0, 28);
+        }
+        String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        return "telemed-" + normalized + "-" + suffix;
     }
 
     private static String normalize(String raw) {
