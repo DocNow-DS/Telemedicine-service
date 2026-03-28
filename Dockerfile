@@ -1,4 +1,8 @@
-FROM openjdk:17-jdk-slim
-COPY target/telemedicine-service-*.jar app.jar
+FROM eclipse-temurin:17-jre-jammy
+WORKDIR /app
+
+COPY target/telemedicine-service-*.jar /app/app.jar
+
 EXPOSE 8083
-ENTRYPOINT ["java","-jar","/app.jar"]
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

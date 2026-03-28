@@ -4,7 +4,7 @@ services:
     ports:
       - "8083:8083"
     environment:
-      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/telemed-db
+      - SPRING_DATA_MONGODB_URI=mongodb+srv://dbuser:dbuser2026@test.ubtlnvl.mongodb.net/clinic?appName=TEST
       - APPOINTMENT_SERVICE_URL=http://appointment-service:8081/api/appointment
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -14,7 +14,6 @@ services:
       - USER_EVENTS_QUEUE=telemedicine.user.events
       - USER_EVENTS_ENABLED=true
     depends_on:
-      - mongo
       - rabbitmq
 
   mongo:

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telemedicine-config
+  namespace: healthcare
+data:
+  SERVER_PORT: "8083"
+  SPRING_DATA_MONGODB_URI: "mongodb+srv://dbuser:dbuser2026@test.ubtlnvl.mongodb.net/clinic?appName=TEST"
+  APPOINTMENT_SERVICE_URL: "http://appointment-service:8080/api/appointment"
+  TELEMEDICINE_APPOINTMENT_VALIDATION_ENABLED: "false"
+  TELEMEDICINE_PATIENT_ID_CHECK_ENABLED: "false"
+  VPAAS_BASE_URL: "https://meet.jit.si"
+  USER_EVENTS_ENABLED: "true"
+  USER_EVENTS_EXCHANGE: "healthcare.user.events"
+  USER_EVENTS_QUEUE: "telemedicine.user.events"
+  RABBITMQ_HOST: "rabbitmq"
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USERNAME: "guest"
