@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Date;
@@ -18,10 +19,18 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    private final SecretKey signingKey;
+    private final List<SecretKey> signingKeys;
 
-    public JwtUtil(@Value("${jwt.secret}") String secret) {
-        this.signingKey = buildSigningKey(secret);
+    public JwtUtil(
+            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.fallback-secret:}") String fallbackSecret
+    ) {
+        List<SecretKey> keys = new ArrayList<>();
+        keys.add(buildSigningKey(secret));
+        if (fallbackSecret != null && !fallbackSecret.trim().isEmpty()) {
+            keys.add(buildSigningKey(fallbackSecret));
+        }
+        this.signingKeys = List.copyOf(keys);
     }
 
     public String extractUsername(String token) {
@@ -43,9 +52,14 @@ public class JwtUtil {
 
     public List<String> extractRoles(String token) {
         try {
-            Object raw = extractAllClaims(token).get("roles");
+            Claims claims = extractAllClaims(token);
+            Object raw = claims.get("roles");
             if (raw instanceof Collection<?> collection) {
                 return collection.stream().map(String::valueOf).toList();
+            }
+            Object singleRole = claims.get("role");
+            if (singleRole instanceof String role && !role.isBlank()) {
+                return List.of(role);
             }
             return List.of();
         } catch (Exception e) {
@@ -62,11 +76,18 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(signingKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        for (SecretKey key : signingKeys) {
+            try {
+                return Jwts.parser()
+                        .verifyWith(key)
+                        .build()
+                        .parseSignedClaims(token)
+                        .getPayload();
+            } catch (Exception ignored) {
+                // Try next configured key.
+            }
+        }
+        throw new IllegalArgumentException("JWT signature validation failed for all configured keys");
     }
 
     private static SecretKey buildSigningKey(String secret) {
