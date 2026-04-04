@@ -4,7 +4,7 @@ services:
     ports:
       - "8083:8083"
     environment:
-      - SPRING_DATA_MONGODB_URI=mongodb+srv://dbuser:dbuser2026@test.ubtlnvl.mongodb.net/clinic?appName=TEST
+      - SPRING_DATA_MONGODB_URI=mongodb+srv://lasannavodya:DelLCS5EiIBT3jFu@course.uf2pi.mongodb.net/HealthCare?retryWrites=true&w=majority&appName=Course
       - APPOINTMENT_SERVICE_URL=http://appointment-service:8081/api/appointment
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
@@ -16,18 +16,8 @@ services:
     depends_on:
       - rabbitmq
 
-  mongo:
-    image: mongo:6
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-
   rabbitmq:
     image: rabbitmq:3-management
     ports:
       - "5672:5672"
       - "15672:15672"
-
-volumes:
-  mongo-data:

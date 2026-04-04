@@ -5,7 +5,7 @@ metadata:
   namespace: healthcare
 data:
   SERVER_PORT: "8083"
-  SPRING_DATA_MONGODB_URI: "mongodb+srv://dbuser:dbuser2026@test.ubtlnvl.mongodb.net/clinic?appName=TEST"
+  SPRING_DATA_MONGODB_URI: "mongodb+srv://lasannavodya:DelLCS5EiIBT3jFu@course.uf2pi.mongodb.net/HealthCare?retryWrites=true&w=majority&appName=Course"
   APPOINTMENT_SERVICE_URL: "http://appointment-service:8080/api/appointment"
   TELEMEDICINE_APPOINTMENT_VALIDATION_ENABLED: "false"
   TELEMEDICINE_PATIENT_ID_CHECK_ENABLED: "false"
