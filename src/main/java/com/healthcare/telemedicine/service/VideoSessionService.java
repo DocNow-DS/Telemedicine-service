@@ -5,6 +5,8 @@ import com.healthcare.telemedicine.model.VideoSession;
 import com.healthcare.telemedicine.model.UserProjection;
 import com.healthcare.telemedicine.repository.UserProjectionRepository;
 import com.healthcare.telemedicine.repository.VideoSessionRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,8 @@ import java.util.UUID;
 
 @Service
 public class VideoSessionService {
+
+    private static final Logger logger = LoggerFactory.getLogger(VideoSessionService.class);
 
     private final VideoSessionRepository videoSessionRepository;
     private final UserProjectionRepository userProjectionRepository;
@@ -116,14 +120,20 @@ public class VideoSessionService {
             }
         }
 
-        if (forceNew) {
-            videoSessionRepository
-                    .findTopByAppointmentIdAndStatusNotOrderByStartTimeDesc(normalizedAppointmentId, "ENDED")
-                    .ifPresent(existing -> endSessionForAppointment(normalizedAppointmentId, normalizedDoctorId, "Force new session"));
-        } else {
-            Optional<VideoSession> active = videoSessionRepository
-                    .findTopByAppointmentIdAndStatusNotOrderByStartTimeDesc(normalizedAppointmentId, "ENDED");
-            if (active.isPresent()) return active.get();
+        try {
+            if (forceNew) {
+                videoSessionRepository
+                        .findTopByAppointmentIdAndStatusNotOrderByStartTimeDesc(normalizedAppointmentId, "ENDED")
+                        .ifPresent(existing -> endSessionForAppointment(normalizedAppointmentId, normalizedDoctorId, "Force new session"));
+            } else {
+                Optional<VideoSession> active = videoSessionRepository
+                        .findTopByAppointmentIdAndStatusNotOrderByStartTimeDesc(normalizedAppointmentId, "ENDED");
+                if (active.isPresent()) return active.get();
+            }
+        } catch (Exception ex) {
+            logger.warn("Datastore read failed while creating telemed session for appointment {}. Falling back to non-persistent session.", normalizedAppointmentId, ex);
+            String fallbackRoomId = buildRoomId(normalizedAppointmentId);
+            return buildActiveSession(normalizedAppointmentId, fallbackRoomId, normalizedPatientId, normalizedDoctorId);
         }
 
         String roomId = buildRoomId(normalizedAppointmentId);
