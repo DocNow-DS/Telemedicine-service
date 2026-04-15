@@ -1,0 +1,32 @@
+# Maven / Java build output
+/target/
+/bin/
+*.class
+*.jar
+*.war
+*.ear
+
+# IDE files
+/.idea/
+*.iml
+/.vscode/
+/.settings/
+.project
+.classpath
+.factorypath
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment and local overrides
+.env
+.env.*
+application-local.properties
+
+# Docker
+*.pid
